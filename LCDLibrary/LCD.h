@@ -21,7 +21,7 @@ public:
   void sPixel(int x, int y);
   void clPixel(int x, int y);
   void line(int x1, int y1, int x2, int y2, int ink);
-  void rectangle(int x1, int y1, int x2, int y2, int ink);
+  void rectangle(int x1, int y1, int x2, int y2);
   void circle(int x, int y, int rad);
 
 private:

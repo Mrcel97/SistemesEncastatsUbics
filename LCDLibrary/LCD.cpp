@@ -73,14 +73,13 @@ void LCD::line(int x1, int y1, int x2, int y2, int ink) {
   delay(10);
 }
 
-void LCD::rectangle(int x1, int y1, int x2, int y2, int ink) {
+void LCD::rectangle(int x1, int y1, int x2, int y2) {
   serial->write(0x7C);
   serial->write(0x0F);
   serial->write(byte(x1));
   serial->write(byte(y1));
   serial->write(byte(x2));
   serial->write(byte(y2));
-  // serial->write(byte(ink));
   delay(10);
 }
 
