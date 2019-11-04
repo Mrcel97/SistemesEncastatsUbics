@@ -1,4 +1,4 @@
-# SistemesEncastatsUbics
+# Sistemes Encastats i Ubics
 Repository home of all the practices done in UdL Sistemes Enacstats i Ubics subject.
 
 ## Team
