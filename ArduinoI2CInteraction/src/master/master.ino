@@ -32,7 +32,7 @@ void loop()
 
   sensor_data_t data;
 
-  delay(3000);
+  delay(5000);
 
   // Request data to slave
   Wire.requestFrom(SLAVE_ADDR, sizeof(sensor_data_t));
@@ -48,7 +48,7 @@ void loop()
   temp.toCharArray(temperature, 64);
   screenManager.print(1, 50, temperature);
 
-  String acc = "Acc: " + String(data.acc_x) + "," + String(data.acc_y) + "," + String(data.acc_x);
+  String acc = "Acc: " + String(data.acc_x) + "," + String(data.acc_y) + "," + String(data.acc_z);
   acc.toCharArray(acceleration, 64);
   screenManager.print(1, 40, acceleration);
 
