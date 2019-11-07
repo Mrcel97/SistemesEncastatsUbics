@@ -1,8 +1,5 @@
-// Incluimos librería
 #include "Wire.h"
 #include <DHT.h>
-#include <Adafruit_Sensor.h>
-#include <Adafruit_ADXL345_U.h>
 
 #define SLAVE_ADDR 0x04
 
@@ -16,21 +13,18 @@
 typedef struct {
   float humidity;
   float temp;
-  float acc_x;
-  float acc_y;
-  float acc_z;
   int distance;
 } sensor_data_t;
 
 DHT dht(DHTPIN, DHTTYPE);
-Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 char accessVar;
 sensor_data_t data;
 
 void receive_fn() {
 }
 
-void send_fn() { 
+void send_fn() {
+  Serial.println("--request found--");
   Wire.write((byte*)&data, sizeof(sensor_data_t));
 }
 
@@ -39,7 +33,6 @@ void setup() {
   Wire.begin(SLAVE_ADDR);
   dht.begin();
 
-  initialize_accelerometer();
   initialize_ultrasound();
   
   Wire.onReceive(receive_fn);
@@ -48,8 +41,6 @@ void setup() {
  
 void loop() {
   delay(5000);
-  sensors_event_t event;
-  accel.getEvent(&event);
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   long echoTime; // Time until echo is reached
@@ -65,11 +56,6 @@ void loop() {
   Serial.print("cm");
   Serial.println("\n");
 
-  Serial.println("----- ACCELEROMETER: -----");
-  Serial.print("X: "); Serial.print(event.acceleration.x); Serial.print(" ");
-  Serial.print("Y: "); Serial.print(event.acceleration.y); Serial.print(" ");
-  Serial.println("Z: "); Serial.print(event.acceleration.z); Serial.print(" ");Serial.println("m/s^2 \n");
-
   Serial.println("----- HUM/TEM SENSOR -----");
   Serial.print("Humedad: ");
   Serial.print(h);
@@ -80,24 +66,7 @@ void loop() {
   
   data.humidity = dht.readHumidity();
   data.temp = dht.readTemperature();
-  data.acc_x = event.acceleration.x;
-  data.acc_y = event.acceleration.y;
-  data.acc_z = event.acceleration.z;
   data.distance = d;
-}
-
-void initialize_accelerometer() {
-  if(!accel.begin()) {
-   /* ADXL345 not detected... */
-   Serial.println("No ADXL345 detected...");
-   while(1);
-  }
-  
-  /* Different ranges for ADX345 sensor */
-  accel.setRange(ADXL345_RANGE_16_G);
-  // displaySetRange(ADXL345_RANGE_8_G);
-  // displaySetRange(ADXL345_RANGE_4_G);
-  // displaySetRange(ADXL345_RANGE_2_G);
 }
 
 void initialize_ultrasound() {
