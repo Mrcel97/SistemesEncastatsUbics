@@ -20,9 +20,6 @@ DHT dht(DHTPIN, DHTTYPE);
 char accessVar;
 sensor_data_t data;
 
-void receive_fn() {
-}
-
 void send_fn() {
   Serial.println("--request found--");
   Wire.write((byte*)&data, sizeof(sensor_data_t));
@@ -35,7 +32,6 @@ void setup() {
 
   initialize_ultrasound();
   
-  Wire.onReceive(receive_fn);
   Wire.onRequest(send_fn);
 }
  
