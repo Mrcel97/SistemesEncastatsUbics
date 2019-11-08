@@ -1,17 +1,19 @@
-#include "Wire.h"
+// #include "Wire.h"
 #include "LCD.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
+#include "SoftwareSerial.h"
 
 #define SLAVE_ADDR 0x04
 
-SoftwareSerial serial(2, 5);
+SoftwareSerial serial(2, 3);
 LCD screenManager;
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
 
 void setup()
 {
   Serial.begin(9600);
+  serial.begin(115200);
   initialize_accelerometer();
   screenManager.begin(&serial);
 }
@@ -21,15 +23,14 @@ void loop()
   sensors_event_t event;
 
   // Request data to slave
-  while (!Serial.available())
-  {
-    delay(5000);
-    accel.getEvent(&event);
-  }
+  while(!Serial.available());
+  
+  accel.getEvent(&event);
+
   String message = Serial.readString();
-
+  
   screenManager.clearScreen();
-
+      
   String hum = "Humidity: " + getValue(message, ',', 0) + " %";
   print(1, 60, hum);
 
@@ -50,7 +51,7 @@ void loop()
 void print(int x, int y, String msg)
 {
   char buffer[64];
-  msg.toCharArray(msg, 64);
+  msg.toCharArray(buffer, 64);
   screenManager.print(x, y, buffer);
 }
 
