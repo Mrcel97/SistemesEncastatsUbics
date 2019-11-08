@@ -7,7 +7,6 @@
 #define ECHO 5    // Digital pin Ultrasound Echo sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-sensor_data_t data;
 
 void setup()
 {
