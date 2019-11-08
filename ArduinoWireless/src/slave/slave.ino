@@ -7,7 +7,6 @@
 #define ECHO 5    // Digital pin Ultrasound Echo sensor
 
 DHT dht(DHTPIN, DHTTYPE);
-sensor_data_t data;
 
 void setup()
 {
@@ -33,7 +32,7 @@ void loop()
   float h = dht.readHumidity();
   float t = dht.readTemperature();
   float distance = getDistance();
-
+  
   Serial.print(String(h) + "," + String(t) + "," + String(distance));
 }
 
