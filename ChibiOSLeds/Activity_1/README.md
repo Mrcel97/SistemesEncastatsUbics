@@ -1,3 +1,5 @@
+## Activity 1
+
 2. Modify the Priority of the new Thread to HIGHPRIO. When running against hs changed the behavior in any way? Why?
 
 There's no difference because when the threads executes the `chThdSleepMilliseconds` they free the CPU, therfore the other thread starts the execution.
