@@ -1,21 +1,36 @@
-// #include "Wire.h"
-#include "LCD.h"
+#include "Wire.h"
 #include <Adafruit_Sensor.h>
 #include <Adafruit_ADXL345_U.h>
-#include "SoftwareSerial.h"
 
 #define SLAVE_ADDR 0x04
 
 SoftwareSerial serial(2, 3);
-LCD screenManager;
+
 Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+
+typedef struct {
+  float acc_x;
+  float acc_y;
+  float acc_z;
+
+  float humidity;
+  float temperature;
+
+  float distance;
+} sensor_data_t;
+
+sensor_data_t data;
+
+void send_fn() {
+  // Raspberry requesting info
+  Wire.write((byte*)&data, sizeof(sensor_data_t));
+}
 
 void setup()
 {
   Serial.begin(9600);
-  serial.begin(115200);
+  Wire.begin(SLAVE_ADDR);
   initialize_accelerometer();
-  screenManager.begin(&serial);
 }
 
 void loop()
@@ -28,31 +43,14 @@ void loop()
   accel.getEvent(&event);
 
   String message = Serial.readString();
-  
-  screenManager.clearScreen();
-      
-  String hum = "Humidity: " + getValue(message, ',', 0) + " %";
-  print(1, 60, hum);
+        
+  data.acc_x = event.acceleration.x;
+  data.acc_y = event.acceleration.y;
+  data.acc_z = event.acceleration.z;
 
-  String temp = "Temperature: " + getValue(message, ',', 1) + " *C";
-  print(1, 50, temp);
-
-  float acc_x = event.acceleration.x;
-  float acc_y = event.acceleration.y;
-  float acc_z = event.acceleration.z;
-
-  String acc = "Acc: " + String(acc_x) + "," + String(acc_y) + "," + String(acc_z);
-  print(1, 40, acc);
-
-  String dist = "Distance: " + getValue(message, ',', 2) + " cm";
-  print(1, 30, dist);
-}
-
-void print(int x, int y, String msg)
-{
-  char buffer[64];
-  msg.toCharArray(buffer, 64);
-  screenManager.print(x, y, buffer);
+  data.humidity = getValue(message, ',', 0).toFloat();
+  data.temperature = getValue(message, ',', 1).toFloat();
+  data.distance = getValue(message, ',', 2).toFloat();
 }
 
 void initialize_accelerometer()
