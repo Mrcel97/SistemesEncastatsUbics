@@ -1,69 +1,99 @@
+#include <ESP8266WiFi.h>
+#include <ESP8266HTTPClient.h>
 #include "Wire.h"
-#include <Adafruit_Sensor.h>
-#include <Adafruit_ADXL345_U.h>
 
-#define SLAVE_ADDR 0x04
+#ifndef STASSID
+#define STASSID "Arduino"
+#define STAPSK  "guirado.ino"
+#endif
 
-SoftwareSerial serial(2, 3);
-
-Adafruit_ADXL345_Unified accel = Adafruit_ADXL345_Unified(12345);
+const char* ssid = STASSID;
+const char* password = STAPSK;
 
 typedef struct {
-  float acc_x;
-  float acc_y;
-  float acc_z;
-
   float humidity;
   float temperature;
-
   float distance;
 } sensor_data_t;
 
+#define SLAVE_ADDR 0x04
+
 sensor_data_t data;
 
-void send_fn() {
-  // Raspberry requesting info
+void send_fn() 
+{
+  Serial.println("--request found--");
   Wire.write((byte*)&data, sizeof(sensor_data_t));
 }
 
 void setup()
 {
-  Serial.begin(9600);
+  Serial.begin(115200);
   Wire.begin(SLAVE_ADDR);
-  initialize_accelerometer();
-}
+    
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  Serial.println("");
 
+  // Wait for connection
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(500);
+    Serial.print(".");
+  }
+  Serial.println("");
+  Serial.print("Connected to ");
+  Serial.println(ssid);
+  Serial.print("IP address: ");
+  Serial.println(WiFi.localIP());
+
+  Wire.onRequest(send_fn);
+}
+ 
 void loop()
 {
-  sensors_event_t event;
+   String res = request("http://192.168.43.89/");
 
-  // Request data to slave
-  while(!Serial.available());
-  
-  accel.getEvent(&event);
-
-  String message = Serial.readString();
-        
-  data.acc_x = event.acceleration.x;
-  data.acc_y = event.acceleration.y;
-  data.acc_z = event.acceleration.z;
-
-  data.humidity = getValue(message, ',', 0).toFloat();
-  data.temperature = getValue(message, ',', 1).toFloat();
-  data.distance = getValue(message, ',', 2).toFloat();
+   data.humidity = getValue(res, ',', 0).toFloat();
+   data.temperature = getValue(res, ',', 1).toFloat();
+   data.distance = getValue(res, ',', 2).toFloat();
+   
+   Serial.println("REQUESTING...");
+   Serial.println(res);
+   delay(5000);
 }
 
-void initialize_accelerometer()
+String request(String url) 
 {
-  if (!accel.begin())
-  {
-    /* ADXL345 not detected... */
-    Serial.println("No ADXL345 detected...");
-    while (1)
-      ;
-  }
+  HTTPClient http;
+  WiFiClient client;
 
-  accel.setRange(ADXL345_RANGE_16_G);
+  if (http.begin(client, url)) 
+  {
+      Serial.print("[HTTP] GET...\n");
+      int httpCode = http.GET();
+ 
+      if (httpCode > 0) 
+      {
+         Serial.printf("[HTTP] GET... code: %d\n", httpCode);
+ 
+         if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) 
+         {
+            String payload = http.getString();
+            return payload;
+         }
+      }
+      else 
+      {
+         Serial.printf("[HTTP] GET... failed,\n");
+      }
+ 
+      http.end();
+   }
+   else 
+   {
+      Serial.printf("[HTTP} Unable to connect\n");
+   }
+   return "";
 }
 
 String getValue(String data, char separator, int index)
