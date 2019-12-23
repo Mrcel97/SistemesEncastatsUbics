@@ -100,7 +100,8 @@ int getDistance()
   return distance; 
 }
 
-void loop(void) {
+void loop(void) 
+{
   server.handleClient();
   MDNS.update();
 

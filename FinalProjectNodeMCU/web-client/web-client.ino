@@ -1,11 +1,14 @@
 #include <ESP8266WiFi.h>
 #include <ESP8266HTTPClient.h>
 #include <Wire.h>
+#include <SparkFun_ADXL345.h> 
+#include "LCD.h"
 
 #ifndef STASSID
 #define STASSID "Arduino"
 #define STAPSK  "guirado.ino"
 #endif
+#define SERVER "http://192.168.43.88/"
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
@@ -28,53 +31,101 @@ static const uint8_t D8   = 15;
 static const uint8_t D9   = 3;
 static const uint8_t D10  = 1;
 
-#define SLAVE_ADDR 0x08
 #define SDA_PIN D1
 #define SCL_PIN D2
 
+
+ADXL345 adxl = ADXL345();
 sensor_data_t data;
 
-void send_fn()
+void clearScreen() 
 {
-  Serial.println("--request found--");
-  Wire.write((byte*)&data, sizeof(sensor_data_t));
+  Serial.write(0x7C);
+  Serial.write(byte(0));
+}  
+
+void print(int posX, int posY, String str) 
+{
+  char buff[128];
+  str.toCharArray(buff, 128);
+  
+  setX(byte(posX));
+  setY(byte(posY));
+  Serial.print(buff);
+  resetXY();
 }
+
+void setX(int posX) 
+{
+  Serial.write(0x7C);
+  Serial.write(0x18);
+  Serial.write(byte(posX));
+}
+
+void setY(int posY) 
+{ 
+  Serial.write(0x7C);
+  Serial.write(0x19);
+  Serial.write(byte(posY));
+}
+
+void resetXY() 
+{
+  setX(byte(1));
+  setY(byte(63));
+}
+
 
 void setup()
 {
-  Wire.begin(SDA_PIN, SCL_PIN, SLAVE_ADDR);
-  Wire.onRequest(send_fn);
   delay(500);
   
   Serial.begin(115200);
 
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, password);
-  Serial.println("");
 
   // Wait for connection
+  resetXY();
+  clearScreen();
+  
   while (WiFi.status() != WL_CONNECTED) {
     delay(500);
     Serial.print(".");
   }
-  Serial.println("");
-  Serial.print("Connected to ");
-  Serial.println(ssid);
-  Serial.print("IP address: ");
-  Serial.println(WiFi.localIP());
+  
+  print(10, 60, "Connected to " + String(ssid));
+  print(10, 40, "IP address: " + WiFi.localIP().toString());
+
+  adxl.powerOn();            
+  adxl.setRangeSetting(16);
+  delay(10000);
 }
  
 void loop()
 {
-   String res = request("http://192.168.43.89/");
-
-   data.humidity = getValue(res, ',', 0).toFloat();
-   data.temperature = getValue(res, ',', 1).toFloat();
-   data.distance = getValue(res, ',', 2).toFloat();
+  clearScreen();
+  
+  String res = request(SERVER);
+  delay(10);
    
-   Serial.println("REQUESTING...");
-   Serial.println(res);
-   delay(5000);
+  data.humidity = getValue(res, ',', 0).toFloat();
+  data.temperature = getValue(res, ',', 1).toFloat();
+  data.distance = getValue(res, ',', 2).toFloat();  
+  Serial.println("REQUESTING...");
+  Serial.println(res);
+
+  Serial.println("Acelerometer...");
+
+  int x, y, z;
+  adxl.readAccel(&x, &y, &z);  
+  Serial.print(x);
+  Serial.print(", ");
+  Serial.print(y);
+  Serial.print(", ");
+  Serial.println(z); 
+  
+  delay(5000);
 }
 
 String request(String url) 

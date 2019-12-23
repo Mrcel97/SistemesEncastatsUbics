@@ -48,6 +48,9 @@ void loop()
     ;
 
   String message = xbee.readString();
+  
+  Serial.println(message);
+
   data.humidity = getValue(message, ',', 0).toFloat();
   data.temperature = getValue(message, ',', 1).toFloat();
   data.distance = getValue(message, ',', 2).toFloat();

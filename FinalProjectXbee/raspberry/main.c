@@ -3,7 +3,7 @@
 #include "chprintf.h"
 
 BSEMAPHORE_DECL(smph, 0);
-//Struct of message to send a data
+
 typedef struct
 {
     float humidity;
@@ -11,13 +11,22 @@ typedef struct
     float distance;
 } sensor_data_t;
 
-static const uint8_t slave_address = 0x08;
+typedef struct
+{
+    int x;
+    int y;
+    int z;
+} sensor_acc_t;
+
+static const uint8_t slave_address = 0x04;
 static const uint8_t accel_address = 0x53;
 
 sensor_data_t data;
+sensor_acc_t acc;
 
 static WORKING_AREA(waThread_LCD, 128);
 static WORKING_AREA(waThread_ACC, 128);
+static WORKING_AREA(waThread_INO, 128);
 
 void init_accelerometer(void);
 
@@ -32,6 +41,7 @@ static msg_t Thread_ACC(void *p)
     while (TRUE)
     {
         chBSemWait(&smph);
+
         i2cMasterTransmitTimeout(&I2C0,
                                  accel_address,
                                  &reg, 1,
@@ -39,32 +49,20 @@ static msg_t Thread_ACC(void *p)
                                  6,
                                  MS2ST(1000));
 
-        chBSemSignal(&smph);
         chThdSleepMilliseconds(500);
 
-        x = (((int)values[1]) << 8) | values[0];
-        y = (((int)values[3]) << 8) | values[2];
-        z = (((int)values[5]) << 8) | values[4];
+        acc.x = (((int)values[1]) << 8) | values[0];
+        acc.y = (((int)values[3]) << 8) | values[2];
+        acc.z = (((int)values[5]) << 8) | values[4];
 
-        sdPut(&SD1, (uint8_t)0x7C);
-        sdPut(&SD1, (uint8_t)0x18);
-        sdPut(&SD1, (uint8_t)0x20);
-        chThdSleepMilliseconds(10);
+        chThdSleepMilliseconds(500);
 
-        sdPut(&SD1, (uint8_t)0x7C);
-        sdPut(&SD1, (uint8_t)0x19);
-        sdPut(&SD1, (uint8_t)0x20);
-        chThdSleepMilliseconds(10);
-
-        chprintf((BaseSequentialStream *)&SD1, "x: %d", x);
-        chprintf((BaseSequentialStream *)&SD1, "y: %d", y);
-        chprintf((BaseSequentialStream *)&SD1, "z: %d", z);
-        chThdSleepMilliseconds(2000);
+        chBSemSignal(&smph);
     }
     return 0;
 }
 
-static msg_t Thread_LCD(void *p)
+static msg_t Thread_INO(void *p)
 {
     (void)p;
     chRegSetThreadName("SerialPrint");
@@ -78,7 +76,18 @@ static msg_t Thread_LCD(void *p)
                                  sizeof(sensor_data_t),
                                  MS2ST(1000));
         chBSemSignal(&smph);
-        chThdSleepMilliseconds(2000);
+    }
+    return 0;
+}
+
+static msg_t Thread_LCD(void *p)
+{
+    (void)p;
+    chRegSetThreadName("SerialPrint");
+    while (TRUE)
+    {
+        chThdSleepMilliseconds(1000);
+        chBSemWait(&smph);
 
         sdPut(&SD1, (uint8_t)0x7C);
         sdPut(&SD1, (uint8_t)0x18);
@@ -93,7 +102,14 @@ static msg_t Thread_LCD(void *p)
         chprintf((BaseSequentialStream *)&SD1, "T.: %f", data.temperature);
         chprintf((BaseSequentialStream *)&SD1, "D.: %f", data.distance);
         chprintf((BaseSequentialStream *)&SD1, "H.: %f", data.humidity);
-        chThdSleepMilliseconds(2000);
+
+        chprintf((BaseSequentialStream *)&SD1, "x: %d", acc.x);
+        chprintf((BaseSequentialStream *)&SD1, "y: %d", acc.y);
+        chprintf((BaseSequentialStream *)&SD1, "z: %d", acc.z);
+
+        chBSemSignal(&smph);
+
+        chThdSleepMilliseconds(1000);
     }
     return 0;
 }
@@ -119,6 +135,7 @@ int main(void)
 
     chThdCreateStatic(waThread_LCD, sizeof(waThread_LCD), NORMALPRIO, Thread_LCD, NULL);
     chThdCreateStatic(waThread_ACC, sizeof(waThread_ACC), NORMALPRIO, Thread_ACC, NULL);
+    chThdCreateStatic(waThread_INO, sizeof(waThread_INO), NORMALPRIO, Thread_INO, NULL);
 
     chThdWait(chThdSelf());
 
