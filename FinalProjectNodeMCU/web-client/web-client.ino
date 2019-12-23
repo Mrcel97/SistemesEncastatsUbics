@@ -94,12 +94,13 @@ void setup()
     Serial.print(".");
   }
   
-  print(10, 60, "Connected to " + String(ssid));
-  print(10, 40, "IP address: " + WiFi.localIP().toString());
+  clearScreen();
+  print(5, 60, "Connected to " + String(ssid));
+  print(5, 40, "IP address: " + WiFi.localIP().toString());
 
   adxl.powerOn();            
   adxl.setRangeSetting(16);
-  delay(10000);
+  delay(5000);
 }
  
 void loop()
@@ -112,18 +113,16 @@ void loop()
   data.humidity = getValue(res, ',', 0).toFloat();
   data.temperature = getValue(res, ',', 1).toFloat();
   data.distance = getValue(res, ',', 2).toFloat();  
-  Serial.println("REQUESTING...");
-  Serial.println(res);
 
-  Serial.println("Acelerometer...");
-
+  clearScreen();
+  print(5, 60, "Humidity: " + String(data.humidity));
+  print(5, 45, "Temp: " + String(data.temperature));
+  print(5, 30, "Dist: " + String(data.distance));
+  
   int x, y, z;
   adxl.readAccel(&x, &y, &z);  
-  Serial.print(x);
-  Serial.print(", ");
-  Serial.print(y);
-  Serial.print(", ");
-  Serial.println(z); 
+  String acc = "Accel (x, y, z): " + String(x) + " ," + String(y) + " ," + String(z);
+  print(5, 15, acc);
   
   delay(5000);
 }
@@ -133,30 +132,31 @@ String request(String url)
   HTTPClient http;
   WiFiClient client;
 
-  if (http.begin(client, url)) //Iniciar conexión
+  if (http.begin(client, url))
   {
-      Serial.print("[HTTP] GET...\n");
-      int httpCode = http.GET();  // Realizar petición
+      int httpCode = http.GET();
  
       if (httpCode > 0) 
-      {
-         Serial.printf("[HTTP] GET... code: %d\n", httpCode);
- 
+      { 
          if (httpCode == HTTP_CODE_OK || httpCode == HTTP_CODE_MOVED_PERMANENTLY) {
-            String payload = http.getString();   // Obtener respuesta
+            String payload = http.getString(); 
             return payload;
          }
       }
       else 
       {
-         Serial.printf("[HTTP] GET... failed,\n");
+        clearScreen();
+        print(5, 60, "[HTTP] GET... failed");
+        delay(2000);
       }
  
       http.end();
    }
    else 
    {
-      Serial.printf("[HTTP} Unable to connect\n");
+      clearScreen();
+      print(5, 60, "[HTTP] Unable to connect");
+      delay(2000);
    }
    return "";
 }
