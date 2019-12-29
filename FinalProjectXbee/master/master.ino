@@ -41,9 +41,13 @@ void setup()
 
 void loop()
 {
-  sensors_event_t event;
-
+  sensors_event_t event;  
+  delay(5000);
+  
   // Request data to slave
+  xbee.print("Request");
+  
+  // Wait until slave sends us the data
   while (!xbee.available())
     ;
 
