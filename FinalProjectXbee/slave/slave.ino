@@ -28,12 +28,18 @@ int getDistance()
 
 void loop()
 {
-  delay(5000);
-  float h = dht.readHumidity();
-  float t = dht.readTemperature();
-  float distance = getDistance();
+  while(!Serial.available()); // Wait for master request
   
-  Serial.print(String(h) + "," + String(t) + "," + String(distance));
+  if (Serial.readString() == "Request")
+  {
+    // Master is requesting info
+    float h = dht.readHumidity();
+    float t = dht.readTemperature();
+    float distance = getDistance();
+    
+    // Return data to master
+    Serial.print(String(h) + "," + String(t) + "," + String(distance)); 
+  }
 }
 
 void initialize_ultrasound()
