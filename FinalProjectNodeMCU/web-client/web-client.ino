@@ -121,7 +121,7 @@ void loop()
   
   int x, y, z;
   adxl.readAccel(&x, &y, &z);  
-  String acc = "Accel (x, y, z): " + String(x) + " ," + String(y) + " ," + String(z);
+  String acc = "Accel (x,y,z): " + String(x) + "," + String(y) + "," + String(z);
   print(5, 15, acc);
   
   delay(5000);

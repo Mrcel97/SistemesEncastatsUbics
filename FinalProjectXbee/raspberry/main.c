@@ -33,7 +33,7 @@ void init_accelerometer(void);
 static msg_t Thread_ACC(void *p)
 {
     (void)p;
-    int x, y, z;
+
     uint8_t reg = 0x32;
     uint8_t values[6];
 
@@ -87,7 +87,6 @@ static msg_t Thread_LCD(void *p)
     while (TRUE)
     {
         chThdSleepMilliseconds(1000);
-        chBSemWait(&smph);
 
         sdPut(&SD1, (uint8_t)0x7C);
         sdPut(&SD1, (uint8_t)0x18);
@@ -106,8 +105,6 @@ static msg_t Thread_LCD(void *p)
         chprintf((BaseSequentialStream *)&SD1, "x: %d", acc.x);
         chprintf((BaseSequentialStream *)&SD1, "y: %d", acc.y);
         chprintf((BaseSequentialStream *)&SD1, "z: %d", acc.z);
-
-        chBSemSignal(&smph);
 
         chThdSleepMilliseconds(1000);
     }
