@@ -1,6 +1,7 @@
 #include <DHT.h>
+#include "SoftwareSerial.h"
 
-#define DHTPIN 2
+#define DHTPIN 4
 #define DHTTYPE DHT11
 
 #define TRIGGER 6 // Digital pin Ultrasound Trigger sensor
@@ -8,10 +9,13 @@
 
 DHT dht(DHTPIN, DHTTYPE);
 
+SoftwareSerial xbee(2, 3);
+
 void setup()
 {
   Serial.begin(9600);
-
+  xbee.begin(9600);
+  
   dht.begin();
   initialize_ultrasound();
 }
@@ -28,9 +32,11 @@ int getDistance()
 
 void loop()
 {
-  while(!Serial.available()); // Wait for master request
+  Serial.println("Waiting for master..");
   
-  if (Serial.readString() == "Request")
+  while(!xbee.available()); // Wait for master request
+  
+  if (xbee.readString() == "Request")
   {
     // Master is requesting info
     float h = dht.readHumidity();
@@ -38,7 +44,9 @@ void loop()
     float distance = getDistance();
     
     // Return data to master
-    Serial.print(String(h) + "," + String(t) + "," + String(distance)); 
+    Serial.println("Sending data...");
+    Serial.println(String(h) + "," + String(t) + "," + String(distance)); 
+    xbee.print(String(h) + "," + String(t) + "," + String(distance)); 
   }
 }
 

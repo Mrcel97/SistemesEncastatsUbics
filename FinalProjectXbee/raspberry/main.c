@@ -30,6 +30,10 @@ static WORKING_AREA(waThread_INO, 128);
 
 void init_accelerometer(void);
 
+void set_x(uint8_t);
+void set_y(uint8_t);
+void set_pos(uint8_t, uint8_t);
+
 static msg_t Thread_ACC(void *p)
 {
     (void)p;
@@ -50,6 +54,8 @@ static msg_t Thread_ACC(void *p)
                                  MS2ST(1000));
 
         chThdSleepMilliseconds(500);
+        
+        chBSemSignal(&smph);
 
         acc.x = (((int)values[1]) << 8) | values[0];
         acc.y = (((int)values[3]) << 8) | values[2];
@@ -57,7 +63,6 @@ static msg_t Thread_ACC(void *p)
 
         chThdSleepMilliseconds(500);
 
-        chBSemSignal(&smph);
     }
     return 0;
 }
@@ -75,7 +80,9 @@ static msg_t Thread_INO(void *p)
                                  (uint8_t *)&data,
                                  sizeof(sensor_data_t),
                                  MS2ST(1000));
+        chThdSleepMilliseconds(500);
         chBSemSignal(&smph);
+        chThdSleepMilliseconds(1000);
     }
     return 0;
 }
@@ -86,27 +93,18 @@ static msg_t Thread_LCD(void *p)
     chRegSetThreadName("SerialPrint");
     while (TRUE)
     {
-        chThdSleepMilliseconds(1000);
+        chThdSleepMilliseconds(2000);
 
-        sdPut(&SD1, (uint8_t)0x7C);
-        sdPut(&SD1, (uint8_t)0x18);
-        sdPut(&SD1, (uint8_t)0x20);
-        chThdSleepMilliseconds(10);
-
-        sdPut(&SD1, (uint8_t)0x7C);
-        sdPut(&SD1, (uint8_t)0x19);
-        sdPut(&SD1, (uint8_t)0x20);
-        chThdSleepMilliseconds(10);
-
-        chprintf((BaseSequentialStream *)&SD1, "T.: %f", data.temperature);
-        chprintf((BaseSequentialStream *)&SD1, "D.: %f", data.distance);
-        chprintf((BaseSequentialStream *)&SD1, "H.: %f", data.humidity);
-
-        chprintf((BaseSequentialStream *)&SD1, "x: %d", acc.x);
-        chprintf((BaseSequentialStream *)&SD1, "y: %d", acc.y);
-        chprintf((BaseSequentialStream *)&SD1, "z: %d", acc.z);
-
-        chThdSleepMilliseconds(1000);
+        set_pos(0x02, 0x39);
+        chprintf((BaseSequentialStream *)&SD1, 
+                 "T: %f D: %f H: %f", 
+                 data.temperature, 
+                 data.distance, 
+                 data.distance);
+        
+        set_pos(0x02, 0x18);
+        chprintf((BaseSequentialStream *)&SD1, 
+                 "x: %d y: %d z: %d", acc.x, acc.y, acc.z);
     }
     return 0;
 }
@@ -122,6 +120,7 @@ int main(void)
     // Initialize Serial Port
     sdStart(&SD1, NULL);
     chBSemInit(&smph, 0);
+    
     /*
    * I2C initialization.
    */
@@ -162,4 +161,26 @@ void init_accelerometer()
                              0,
                              MS2ST(1000));
     chThdSleepMilliseconds(50);
+}
+
+void set_x(uint8_t x)
+{
+    sdPut(&SD1, (uint8_t)0x7C);
+    sdPut(&SD1, (uint8_t)0x18);
+    sdPut(&SD1, x);
+    chThdSleepMilliseconds(10);
+}
+
+void set_y(uint8_t y)
+{
+    sdPut(&SD1, (uint8_t)0x7C);
+    sdPut(&SD1, (uint8_t)0x19);
+    sdPut(&SD1, y);
+    chThdSleepMilliseconds(10);
+}
+
+void set_pos(uint8_t x, uint8_t y)
+{
+  set_x(x);
+  set_y(y);
 }

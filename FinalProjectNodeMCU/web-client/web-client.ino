@@ -8,7 +8,8 @@
 #define STASSID "Arduino"
 #define STAPSK  "guirado.ino"
 #endif
-#define SERVER "http://192.168.43.88/"
+
+#define SERVER "http://192.168.43.249/"
 
 const char* ssid = STASSID;
 const char* password = STAPSK;
